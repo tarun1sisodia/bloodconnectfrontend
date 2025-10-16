@@ -270,7 +270,7 @@ class DonationCentersAPI extends API {
     if (filters.timeSlot) queryParams.append('timeSlot', filters.timeSlot);
     
     const queryString = queryParams.toString();
-    return this.get(`api/donation-centers${queryString ? '?' + queryString : ''}`);
+    return this.get(`/api/donation-centers${queryString ? '?' + queryString : ''}`);
   }
 
   // Get nearby donation centers
@@ -278,37 +278,37 @@ class DonationCentersAPI extends API {
     const queryParams = new URLSearchParams();
     if (distance) queryParams.append('distance', distance);
     
-    return this.get(`api/donation-centers/nearby?${queryParams.toString()}`);
+    return this.get(`/api/donation-centers/nearby?${queryParams.toString()}`);
   }
 
   // Get donation center by ID
   async getDonationCenterById(id) {
-    return this.get(`api/donation-centers/${id}`);
+    return this.get(`/api/donation-centers/${id}`);
   }
 
   // Get available slots for a donation center
   async getAvailableSlots(centerId, date) {
-    return this.get(`api/donation-centers/${centerId}/slots?date=${date}`);
+    return this.get(`/api/donation-centers/${centerId}/slots?date=${date}`);
   }
 
   // Book an appointment
   async bookAppointment(data) {
-    return this.post('api/donation-centers/appointments', data);
+    return this.post('/api/donation-centers/appointments', data);
   }
 
   // Get user appointments
   async getUserAppointments() {
-    return this.get('api/donation-centers/appointments/me');
+    return this.get('/api/donation-centers/appointments/me');
   }
 
   // Cancel an appointment
-  async cancelAppointment(id) {z``
-    return this.put(`api/donation-centers/appointments/${id}/cancel`);
+  async cancelAppointment(id) {
+    return this.put(`/api/donation-centers/appointments/${id}/cancel`);
   }
 
   // Get all cities with donation centers
   async getAllCities() {
-    return this.get('api/donation-centers/cities');
+    return this.get('/api/donation-centers/cities');
   }
 }
 
