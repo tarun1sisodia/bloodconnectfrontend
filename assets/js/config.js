@@ -1,1 +1,2 @@
-const API_URL = 'https://web-production-ac81f.up.railway.app';
+// Use environment variable or fallback to localhost
+const API_URL = window.API_URL || "http://localhost:8000";

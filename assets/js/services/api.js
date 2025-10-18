@@ -4,64 +4,106 @@
 class API {
   constructor(baseURL) {
     this.baseURL = baseURL;
+    this.security = window.FrontendSecurity || null;
   }
 
   // Get auth token from localStorage
   getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
-  // Headers with authorization
+  // Headers with authorization and security
   getHeaders() {
     const headers = {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     };
 
     const token = this.getToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // Add security headers if available
+    if (this.security) {
+      return this.security.addSecurityHeaders(
+        this.security.addCSRFToken(headers)
+      );
     }
 
     return headers;
   }
 
-  // Generic GET request
+  // Generic GET request with security
   async get(endpoint) {
     try {
+      // Check rate limiting
+      if (
+        this.security &&
+        !this.security.rateLimit.check(endpoint, 10, 60000)
+      ) {
+        throw new Error("Rate limit exceeded. Please try again later.");
+      }
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'GET',
-        headers: this.getHeaders()
+        method: "GET",
+        headers: this.getHeaders(),
+        credentials: "include",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        throw new Error(error.message || "Something went wrong");
       }
 
       return await response.json();
     } catch (error) {
       console.error(`GET ${endpoint} error:`, error);
+      if (this.security) {
+        this.security.monitor.logSecurityEvent("API_ERROR", {
+          endpoint,
+          method: "GET",
+          error: error.message,
+        });
+      }
       throw error;
     }
   }
 
-  // Generic POST request
+  // Generic POST request with security
   async post(endpoint, data) {
     try {
+      // Check rate limiting
+      if (this.security && !this.security.rateLimit.check(endpoint, 5, 60000)) {
+        throw new Error("Rate limit exceeded. Please try again later.");
+      }
+
+      // Sanitize data if security is available
+      const sanitizedData = this.security
+        ? this.security.sanitizeInput(data)
+        : data;
+
       const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'POST',
+        method: "POST",
         headers: this.getHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(sanitizedData),
+        credentials: "include",
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        throw new Error(error.message || "Something went wrong");
       }
 
       return await response.json();
     } catch (error) {
       console.error(`POST ${endpoint} error:`, error);
+      if (this.security) {
+        this.security.monitor.logSecurityEvent("API_ERROR", {
+          endpoint,
+          method: "POST",
+          error: error.message,
+        });
+      }
       throw error;
     }
   }
@@ -70,14 +112,14 @@ class API {
   async put(endpoint, data) {
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: this.getHeaders(),
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        throw new Error(error.message || "Something went wrong");
       }
 
       return await response.json();
@@ -91,13 +133,13 @@ class API {
   async delete(endpoint) {
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, {
-        method: 'DELETE',
-        headers: this.getHeaders()
+        method: "DELETE",
+        headers: this.getHeaders(),
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Something went wrong');
+        throw new Error(error.message || "Something went wrong");
       }
 
       return await response.json();
@@ -116,12 +158,12 @@ class UsersAPI extends API {
 
   // Get current user profile
   async getProfile() {
-    return this.get('/api/users/profile');
+    return this.get("/api/users/profile");
   }
 
   // Update user profile
   async updateProfile(data) {
-    return this.put('/api/users/profile', data);
+    return this.put("/api/users/profile", data);
   }
 
   // Get all donors
@@ -129,11 +171,11 @@ class UsersAPI extends API {
     const queryParams = new URLSearchParams();
 
     if (filters.bloodType) {
-      queryParams.append('bloodType', filters.bloodType);
+      queryParams.append("bloodType", filters.bloodType);
     }
 
     if (filters.location) {
-      queryParams.append('location', filters.location);
+      queryParams.append("location", filters.location);
     }
 
     return this.get(`/api/users/donors?${queryParams.toString()}`);
@@ -153,7 +195,7 @@ class RequestsAPI extends API {
 
   // Create a new blood request
   async createRequest(data) {
-    return this.post('/api/requests', data);
+    return this.post("/api/requests", data);
   }
 
   // Get all blood requests
@@ -161,23 +203,23 @@ class RequestsAPI extends API {
     const queryParams = new URLSearchParams();
 
     if (filters.bloodType) {
-      queryParams.append('bloodType', filters.bloodType);
+      queryParams.append("bloodType", filters.bloodType);
     }
 
     if (filters.status) {
-      queryParams.append('status', filters.status);
+      queryParams.append("status", filters.status);
     }
 
     if (filters.urgency) {
-      queryParams.append('urgency', filters.urgency);
+      queryParams.append("urgency", filters.urgency);
     }
 
     if (filters.location) {
-      queryParams.append('location', filters.location);
+      queryParams.append("location", filters.location);
     }
 
     if (filters.limit) {
-      queryParams.append('limit', filters.limit);
+      queryParams.append("limit", filters.limit);
     }
 
     return this.get(`/api/requests?${queryParams.toString()}`);
@@ -190,7 +232,7 @@ class RequestsAPI extends API {
 
   // Get requests by current user
   async getMyRequests() {
-    return this.get('/api/requests/user/me');
+    return this.get("/api/requests/user/me");
   }
 
   // Update request
@@ -212,12 +254,12 @@ class DonationsAPI extends API {
 
   // Record a new donation
   async createDonation(data) {
-    return this.post('/api/donations', data);
+    return this.post("/api/donations", data);
   }
 
   // Get donations by current user
   async getMyDonations() {
-    return this.get('/api/donations/me');
+    return this.get("/api/donations/me");
   }
 
   // Get donation by ID
@@ -251,7 +293,7 @@ class ContactAPI extends API {
 
   // Submit contact form
   async submitContactForm(data) {
-    return this.post('/api/contact', data);
+    return this.post("/api/contact", data);
   }
 }
 
@@ -264,20 +306,22 @@ class DonationCentersAPI extends API {
   // Get all donation centers
   async getAllCenters(filters = {}) {
     const queryParams = new URLSearchParams();
-    
-    if (filters.city) queryParams.append('city', filters.city);
-    if (filters.date) queryParams.append('date', filters.date);
-    if (filters.timeSlot) queryParams.append('timeSlot', filters.timeSlot);
-    
+
+    if (filters.city) queryParams.append("city", filters.city);
+    if (filters.date) queryParams.append("date", filters.date);
+    if (filters.timeSlot) queryParams.append("timeSlot", filters.timeSlot);
+
     const queryString = queryParams.toString();
-    return this.get(`/api/donation-centers${queryString ? '?' + queryString : ''}`);
+    return this.get(
+      `/api/donation-centers${queryString ? "?" + queryString : ""}`
+    );
   }
 
   // Get nearby donation centers
   async getNearbyDonationCenters(distance) {
     const queryParams = new URLSearchParams();
-    if (distance) queryParams.append('distance', distance);
-    
+    if (distance) queryParams.append("distance", distance);
+
     return this.get(`/api/donation-centers/nearby?${queryParams.toString()}`);
   }
 
@@ -293,12 +337,12 @@ class DonationCentersAPI extends API {
 
   // Book an appointment
   async bookAppointment(data) {
-    return this.post('/api/donation-centers/appointments', data);
+    return this.post("/api/donation-centers/appointments", data);
   }
 
   // Get user appointments
   async getUserAppointments() {
-    return this.get('/api/donation-centers/appointments/me');
+    return this.get("/api/donation-centers/appointments/me");
   }
 
   // Cancel an appointment
@@ -308,7 +352,7 @@ class DonationCentersAPI extends API {
 
   // Get all cities with donation centers
   async getAllCities() {
-    return this.get('/api/donation-centers/cities');
+    return this.get("/api/donation-centers/cities");
   }
 }
 
@@ -318,4 +362,4 @@ const usersAPI = new UsersAPI(API_URL);
 const requestsAPI = new RequestsAPI(API_URL);
 const donationsAPI = new DonationsAPI(API_URL);
 const matchAPI = new MatchAPI(API_URL);
-const contactAPI = new ContactAPI(API_URL);  // Add this line
+const contactAPI = new ContactAPI(API_URL); // Add this line
