@@ -127,7 +127,13 @@ function isAuthenticated() {
     
     if (redirectUrl) {
       localStorage.removeItem('loginRedirect');
-      window.location.href = redirectUrl;
+      // SECURITY: Validate redirect URL to prevent open redirect attacks.
+      // Only allow relative paths starting with '/'.
+      if (redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) {
+        window.location.href = redirectUrl;
+      } else {
+        window.location.href = '/index.html';
+      }
     } else {
       window.location.href = '/index.html';
     }
