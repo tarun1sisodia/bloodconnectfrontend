@@ -5,3 +5,19 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# 🛡️ Sentinel: Security Headers Enhancement
+# Provides defense-in-depth protection against various web attacks
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # Content-Security-Policy: Mitigates XSS and other injection attacks by restricting resource sources
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com https://cdnjs.cloudflare.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https://web-production-ac81f.up.railway.app http://localhost:5000; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; frame-ancestors 'none';"
+    # X-Frame-Options: Prevents clickjacking by disabling embedding in iframes
+    X-Frame-Options = "DENY"
+    # X-Content-Type-Options: Prevents browsers from MIME-sniffing away from the declared content-type
+    X-Content-Type-Options = "nosniff"
+    # Referrer-Policy: Controls how much referrer information is sent with requests
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Permissions-Policy: Restricts use of powerful browser features
+    Permissions-Policy = "geolocation=(), camera=(), microphone=()"
