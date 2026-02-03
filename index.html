@@ -391,6 +391,7 @@
     <div id="toast-container" class="fixed bottom-4 right-4 z-50"></div>
 
     <script src="assets/js/config.js"></script>
+    <script src="assets/js/utils/sanitize.js"></script>
     <script src="assets/js/utils/toast.js"></script>
     <script src="assets/js/services/api.js"></script>
     <script src="assets/js/services/auth.js"></script>
@@ -481,13 +482,13 @@
                     <div class="p-6 bg-white rounded-lg shadow-sm border-l-4 border-${urgencyClass}-600">
                       <div class="flex justify-between items-start">
                         <div>
-                          <span class="inline-block px-2 py-1 bg-${urgencyClass}-100 text-${urgencyClass}-800 rounded text-sm font-semibold mb-2">${request.urgency.charAt(0).toUpperCase() + request.urgency.slice(1)}</span>
-                          <h3 class="font-bold text-lg mb-1">${request.patient?.bloodType || 'Unknown'} Blood Needed</h3>
-                          <p class="text-gray-600 mb-2">${request.hospital?.name || 'Unknown'}, ${request.hospital?.city || 'Unknown'}</p>
+                          <span class="inline-block px-2 py-1 bg-${urgencyClass}-100 text-${urgencyClass}-800 rounded text-sm font-semibold mb-2">${escapeHTML(request.urgency.charAt(0).toUpperCase() + request.urgency.slice(1))}</span>
+                          <h3 class="font-bold text-lg mb-1">${escapeHTML(request.patient?.bloodType || 'Unknown')} Blood Needed</h3>
+                          <p class="text-gray-600 mb-2">${escapeHTML(request.hospital?.name || 'Unknown')}, ${escapeHTML(request.hospital?.city || 'Unknown')}</p>
                         </div>
-                        <span class="text-sm text-gray-500">${timeAgo}</span>
+                        <span class="text-sm text-gray-500">${escapeHTML(timeAgo)}</span>
                       </div>
-                      <p class="mb-4">${request.description || `Patient needs ${request.unitsNeeded} units.`}</p>
+                      <p class="mb-4">${escapeHTML(request.description || `Patient needs ${request.unitsNeeded} units.`)}</p>
                       <a href="requests.html?id=${request._id}" class="text-red-600 font-semibold hover:text-red-700">View Details →</a>
                     </div>
                   `;
